@@ -8,20 +8,22 @@ mkdir -p /run/mysqld
 chown -R mysql:mysql /run/mysqld
 chown -R mysql:mysql /var/lib/mysql
 
-if [ ! -f "/var/lib/mysql/.inception_initialized" ]; then
-	mysql_install_db \
-		--user=mysql \
-		--datadir=/var/lib/mysql \
-		--auth-root-authentication-method=normal
+if [ ! -f /var/lib/mysql/.inception_initialized ]; then
+    rm -rf /var/lib/mysql/*
 
-	mysqld --user=mysql --skip-networking --socket=/run/mysqld/mysqld.sock &
-	pid="$!"
+    mysql_install_db \
+        --user=mysql \
+        --datadir=/var/lib/mysql \
+        --auth-root-authentication-method=normal
 
-	until mariadb-admin --protocol=SOCKET --socket=/run/mysqld/mysqld.sock ping >/dev/null 2>&1; do
-		sleep 1
-	done
+    mysqld --user=mysql --skip-networking --socket=/run/mysqld/mysqld.sock &
+    pid="$!"
 
-	mariadb --protocol=SOCKET --socket=/run/mysqld/mysqld.sock -uroot << EOF
+    until mariadb-admin --protocol=SOCKET --socket=/run/mysqld/mysqld.sock ping >/dev/null 2>&1; do
+        sleep 1
+    done
+
+    mariadb --protocol=SOCKET --socket=/run/mysqld/mysqld.sock -uroot << EOF
 DELETE FROM mysql.user WHERE User='';
 DROP DATABASE IF EXISTS test;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
@@ -35,16 +37,16 @@ GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%';
 FLUSH PRIVILEGES;
 EOF
 
-	mariadb --protocol=SOCKET --socket=/run/mysqld/mysqld.sock \
-		-uroot -p"${DB_ROOT_PASSWORD}" \
-		-e "SELECT User,Host FROM mysql.user; SHOW DATABASES;"
+    touch /var/lib/mysql/.inception_initialized
 
-	touch /var/lib/mysql/.inception_initialized
+    mariadb-admin \
+        --protocol=SOCKET \
+        --socket=/run/mysqld/mysqld.sock \
+        -uroot \
+        -p"${DB_ROOT_PASSWORD}" \
+        shutdown
 
-	mariadb-admin --protocol=SOCKET --socket=/run/mysqld/mysqld.sock \
-		-uroot -p"${DB_ROOT_PASSWORD}" shutdown
-
-	wait "$pid"
+    wait "$pid"
 fi
 
 exec mysqld --user=mysql --console
