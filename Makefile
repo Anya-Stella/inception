@@ -1,16 +1,18 @@
 NAME = inception
 
 COMPOSE = docker compose -f srcs/docker-compose.yml
-WOEDPERSS_DATA = /home/tishihar/data/wordpress
-MARIADB_DATA = /home/tishihar/data/mariadb
+WORDPRESS_DATA = $(HOME)/data/wordpress
+MARIADB_DATA = $(HOME)/data/mariadb
 
 all: up
 
 up:
-	$(COMPOSE) up
+	mkdir -p $(WORDPRESS_DATA)
+	mkdir -p $(MARIADB_DATA)
+	$(COMPOSE) up --build
 
 build:
-	mkdir -p $(WOEDPERSS_DATA)
+	mkdir -p $(WORDPRESS_DATA)
 	mkdir -p $(MARIADB_DATA)
 	$(COMPOSE) up --build
 
@@ -25,6 +27,8 @@ down:
 
 re:
 	$(COMPOSE) down
+	mkdir -p $(WORDPRESS_DATA)
+	mkdir -p $(MARIADB_DATA)
 	$(COMPOSE) up --build
 
 clean:
@@ -32,7 +36,7 @@ clean:
 
 fclean: clean
 	$(COMPOSE) down --rmi all --volumes --remove-orphans
-	rm -rf $(WOEDPERSS_DATA)
+	rm -rf $(WORDPRESS_DATA)
 	rm -rf $(MARIADB_DATA)
 	docker system prune -f
 
