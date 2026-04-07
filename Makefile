@@ -1,6 +1,6 @@
 NAME = inception
 
-COMPOSE = docker compose -f srcs/docker-compose.yml
+COMPOSE = docker-compose -f srcs/docker-compose.yml
 WORDPRESS_DATA = $(HOME)/data/wordpress
 MARIADB_DATA = $(HOME)/data/mariadb
 
