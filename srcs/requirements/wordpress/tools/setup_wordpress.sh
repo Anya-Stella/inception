@@ -12,26 +12,27 @@ mkdir -p "$WP_PATH"
 
 cd "$WP_PATH"
 
-if [ ! -f wp-config.php ]; then
-    if [ ! -f wp-load.php ]; then
-        wp core download --allow-root
-    fi
+echo "Waiting for MariaDB..."
+until mysqladmin ping -h"$MYSQL_HOST" -u"$MYSQL_USER" -p"$DB_PASSWORD" --silent; do
+    sleep 2
+done
 
+if [ ! -f wp-load.php ]; then
+    wp core download --allow-root --path="$WP_PATH"
+fi
+
+if [ ! -f wp-config.php ]; then
     wp config create \
         --allow-root \
         --dbname="$MYSQL_DATABASE" \
         --dbuser="$MYSQL_USER" \
         --dbpass="$DB_PASSWORD" \
         --dbhost="$MYSQL_HOST" \
-        --path="$WP_PATH"
+        --path="$WP_PATH" \
+        --skip-check
 
-    wp config set FS_METHOD direct --allow-root
+    wp config set FS_METHOD direct --allow-root --path="$WP_PATH"
 fi
-
-echo "Waiting for MariaDB..."
-until mysqladmin ping -h"$MYSQL_HOST" -u"$MYSQL_USER" -p"$DB_PASSWORD" --silent; do
-    sleep 2
-done
 
 if ! wp core is-installed --allow-root --path="$WP_PATH"; then
     wp core install \
@@ -44,11 +45,13 @@ if ! wp core is-installed --allow-root --path="$WP_PATH"; then
         --skip-email \
         --path="$WP_PATH"
 
-    wp user create "$WP_USER" "$WP_USER_EMAIL" \
-        --user_pass="$WP_USER_PASSWORD" \
-        --role=author \
-        --allow-root \
-        --path="$WP_PATH"
+    if ! wp user get "$WP_USER" --allow-root --path="$WP_PATH" >/dev/null 2>&1; then
+        wp user create "$WP_USER" "$WP_USER_EMAIL" \
+            --user_pass="$WP_USER_PASSWORD" \
+            --role=author \
+            --allow-root \
+            --path="$WP_PATH"
+    fi
 fi
 
 chown -R www-data:www-data "$WP_PATH"
