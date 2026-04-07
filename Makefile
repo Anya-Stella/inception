@@ -1,8 +1,10 @@
 NAME = inception
 
+LOGIN = tishihar
 COMPOSE = docker-compose -f srcs/docker-compose.yml
-WORDPRESS_DATA = $(HOME)/data/wordpress
-MARIADB_DATA = $(HOME)/data/mariadb
+
+WORDPRESS_DATA = /home/$(LOGIN)/data/wordpress
+MARIADB_DATA = /home/$(LOGIN)/data/mariadb
 
 all: up
 
@@ -14,7 +16,7 @@ up:
 build:
 	mkdir -p $(WORDPRESS_DATA)
 	mkdir -p $(MARIADB_DATA)
-	$(COMPOSE) up --build
+	$(COMPOSE) build
 
 start:
 	$(COMPOSE) start
@@ -27,6 +29,8 @@ down:
 
 re:
 	$(COMPOSE) down
+	rm -rf $(WORDPRESS_DATA)
+	rm -rf $(MARIADB_DATA)
 	mkdir -p $(WORDPRESS_DATA)
 	mkdir -p $(MARIADB_DATA)
 	$(COMPOSE) up --build
@@ -46,4 +50,4 @@ logs:
 ps:
 	$(COMPOSE) ps
 
-.PHONY: all up down stop start re clean fclean logs ps build
+.PHONY: all up build start stop down re clean fclean logs ps
