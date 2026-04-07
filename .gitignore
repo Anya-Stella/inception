@@ -1,2 +1,4 @@
-
+# confidential information
 .env
+secrets/*
+
