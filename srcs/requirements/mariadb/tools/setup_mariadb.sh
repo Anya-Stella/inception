@@ -39,6 +39,7 @@ EOF
 
     touch /var/lib/mysql/.inception_initialized
 
+    unset MYSQL_HOST
     mariadb-admin \
         --protocol=SOCKET \
         --socket=/run/mysqld/mysqld.sock \
@@ -49,5 +50,4 @@ EOF
     wait "$pid"
 fi
 
-# exec mysqld --user=mysql --console
-exec mariadbd --user=mysql --console
+exec mysqld --user=mysql --console
