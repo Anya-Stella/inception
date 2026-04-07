@@ -49,4 +49,5 @@ EOF
     wait "$pid"
 fi
 
-exec mysqld --user=mysql --console
+# exec mysqld --user=mysql --console
+exec mariadbd --user=mysql --console
