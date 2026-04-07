@@ -18,7 +18,7 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
 		sleep 1
 	done
 
-	mariadb --socket=/run/mysqld/mysqld.sock << EOF
+	mariadb --socket=/run/mysqld/mysqld.sock -uroot << EOF
 DELETE FROM mysql.user WHERE User='';
 DROP DATABASE IF EXISTS test;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
@@ -31,7 +31,7 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASSWORD}';
 FLUSH PRIVILEGES;
 EOF
 
-	kill "$pid"
+	mariadb-admin --socket=/run/mysqld/mysqld.sock -uroot shutdown
 	wait "$pid"
 fi
 
