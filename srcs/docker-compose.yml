@@ -55,7 +55,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /home/${LOGIN}/data/mariadb
+      device: /home/tishihar/data/mariadb
 
   wordpress_data:
     name: wordpress_data
@@ -63,7 +63,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /home/${LOGIN}/data/wordpress
+      device: /home/tishihar/data/wordpress
 
 networks:
   inception:
