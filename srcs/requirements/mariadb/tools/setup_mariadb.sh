@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+unset MYSQL_HOST
+
 DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
 DB_PASSWORD=$(cat /run/secrets/db_password)
 
@@ -41,6 +43,7 @@ EOF
 
     unset MYSQL_HOST
     mariadb-admin \
+        -h localhost \
         --protocol=SOCKET \
         --socket=/run/mysqld/mysqld.sock \
         -uroot \
