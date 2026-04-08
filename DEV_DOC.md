@@ -1,138 +1,210 @@
 # Developer Documentation — Inception
 
-## Setting Up the Environment from Scratch
+Setup, customization, and troubleshooting guide for the development environment.
+
+## Initial Setup
 
 ### Prerequisites
 
-- A Virtual Machine with Docker and Docker Compose V2 installed
+- Virtual Machine with Docker and Docker Compose V2 installed
 - `git` installed
-- Access to the repository
+- Repository access
 
-### 1. Clone the Repository
+### Step 1: Clone Repository
 
 ```bash
 git clone <repository-url>
 cd inception
 ```
 
-### 2. Configure Secrets
+### Step 2: Configure Secrets
 
-Create the `secrets/` directory and populate the password files:
+Create the `secrets/` directory and set up password files:
 
 ```bash
 mkdir -p secrets
-echo "YourDbRootPassword" > secrets/db_root_password.txt
-echo "YourDbUserPassword" > secrets/db_password.txt
-echo "YourWpAdminPassword" > secrets/wp_admin_password.txt
-echo "YourWpUserPassword" > secrets/wp_user_password.txt
+echo "DbRootPassword123" > secrets/db_root_password.txt
+echo "DbUserPassword456" > secrets/db_password.txt
+echo "WpAdminPassword789" > secrets/wp_admin_password.txt
+echo "WpUserPassword000" > secrets/wp_user_password.txt
 ```
 
-> Each file should contain exactly one line with the password (no trailing newline).
+**Note:** Each file should contain exactly one line with the password (no trailing newline).
 
-### 3. Configure Environment Variables
+### Step 3: Configure Environment Variables
 
-Edit `srcs/.env` to match your setup:
+Create/edit `srcs/.env`:
 
 ```env
-LOGIN=your42login
+LOGIN=tishihar
 MYSQL_DATABASE=wordpress_db
 MYSQL_USER=wp_user
 MYSQL_HOST=mariadb
-DOMAIN_NAME=your42login.42.fr
+DOMAIN_NAME=tishihar.42.fr
 WP_TITLE=Inception WordPress
-WP_ADMIN_USER=your_wp_admin_name    # Must NOT contain 'admin'
-WP_ADMIN_EMAIL=youremail@example.com
+WP_ADMIN_USER=wpmaster         # Must NOT contain 'admin'
+WP_ADMIN_EMAIL=admin@example.com
 WP_USER=user42
 WP_USER_EMAIL=user42@example.com
 ```
 
-### 4. Configure DNS
+**Important:**
+- WP_ADMIN_USER cannot contain the string 'admin'
+- `.env` must NOT be committed to Git (add to `.gitignore`)
+
+### Step 4: Configure DNS
 
 Add to `/etc/hosts`:
+
 ```
-127.0.0.1 your42login.42.fr
+127.0.0.1 tishihar.42.fr
 ```
 
-## Building and Launching
+## Build and Run
 
 ### Makefile Targets
 
-| Target | Command | Description |
-|--------|---------|-------------|
-| `make` / `make up` | `docker compose up --build` | Build images and start containers |
-| `make build` | Same as `up` | Alias for up |
-| `make start` | `docker compose start` | Start stopped containers |
-| `make stop` | `docker compose stop` | Stop running containers |
-| `make down` | `docker compose down` | Stop and remove containers |
-| `make re` | `down` + `up --build` | Full rebuild and restart |
-| `make clean` | `docker compose down -v` | Remove containers and volumes |
-| `make fclean` | Full cleanup | Remove everything + prune |
-| `make logs` | `docker compose logs` | View logs |
-| `make ps` | `docker compose ps` | View container status |
+| Command | Description |
+|---------|-------------|
+| `make` | Build images and start containers |
+| `make start` | Start stopped containers |
+| `make stop` | Stop containers (don't remove) |
+| `make down` | Stop and remove containers |
+| `make re` | Clean rebuild and restart |
+| `make fclean` | Full cleanup (images, volumes, data) |
+| `make logs` | View logs |
+| `make ps` | Show container status |
 
-### Docker Compose Configuration
+### Usage Examples
 
-The `docker-compose.yml` is located at `srcs/docker-compose.yml`. The Makefile references it with `-f srcs/docker-compose.yml`.
+```bash
+# Initial startup
+make
+
+# Restart containers
+make re
+
+# Full reset
+make fclean
+make
+```
 
 ## Container Management
 
-```bash
-# Enter a container shell
-docker exec -it nginx bash
-docker exec -it wordpress bash
-docker exec -it mariadb bash
+### Shell Access
 
-# View real-time logs
+```bash
+# Connect to NGINX container
+docker exec -it inception-nginx-1 bash
+
+# Connect to WordPress container
+docker exec -it inception-wordpress-1 bash
+
+# Connect to MariaDB container
+docker exec -it inception-mariadb-1 bash
+```
+
+### View Logs
+
+```bash
+# Real-time logs for all services
 docker compose -f srcs/docker-compose.yml logs -f
 
-# Restart a specific service
+# Logs for specific service
+docker compose -f srcs/docker-compose.yml logs wordpress
+
+# Last 100 lines
+docker compose -f srcs/docker-compose.yml logs --tail=100
+```
+
+### Service Operations
+
+```bash
+# Restart WordPress
 docker compose -f srcs/docker-compose.yml restart wordpress
+
+# Restart MariaDB
+docker compose -f srcs/docker-compose.yml restart mariadb
+
+# Test NGINX configuration
+docker exec -it inception-nginx-1 nginx -t
 ```
 
 ## Data Persistence
 
-### Volume Locations on Host
+### Volume Mappings
 
 | Volume | Host Path | Container Path |
 |--------|-----------|----------------|
 | `wordpress_data` | `/home/tishihar/data/wordpress` | `/var/www/html` |
 | `mariadb_data` | `/home/tishihar/data/mariadb` | `/var/lib/mysql` |
 
-These directories are created automatically by `make up`.
+- Directories are auto-created by Makefile
+- Data persists after container removal at `/home/tishihar/data/`
+- Completely removed by `make fclean`
 
-### How Data Persists
+## Troubleshooting
 
-- Named Docker volumes with `driver: local` and `device` option bind to host paths
-- Data survives `make down` and `make stop`
-- Data is removed only by `make clean` (volumes) or `make fclean` (volumes + directories)
+### Port 443 Already in Use
 
-## Project Structure
+```bash
+# Check which process uses port 443
+sudo lsof -i :443
 
+# Kill conflicting process or modify docker-compose.yml
 ```
-inception/
-├── Makefile                    # Build and management commands
-├── README.md                   # Project overview
-├── USER_DOC.md                 # User documentation
-├── DEV_DOC.md                  # This file
-├── secrets/                    # Password files (gitignored)
-│   ├── db_root_password.txt
-│   ├── db_password.txt
-│   ├── wp_admin_password.txt
-│   └── wp_user_password.txt
-└── srcs/
-    ├── .env                    # Environment variables (gitignored)
-    ├── docker-compose.yml      # Service orchestration
-    └── requirements/
-        ├── mariadb/
-        │   ├── Dockerfile
-        │   ├── conf/50-server.conf
-        │   └── tools/setup_mariadb.sh
-        ├── nginx/
-        │   ├── Dockerfile
-        │   ├── conf/default.conf
-        │   └── tools/setup_nginx.sh
-        └── wordpress/
-            ├── Dockerfile
-            ├── conf/www.conf
-            └── tools/setup_wordpress.sh
+
+### Database Connection Errors
+
+```bash
+# Check MariaDB status
+docker exec -it inception-mariadb-1 mysqladmin ping -u root -p
+
+# Test WordPress DB access
+docker exec -it inception-wordpress-1 wp db check --allow-root
 ```
+
+### NGINX Configuration Errors
+
+```bash
+# Verify NGINX config
+docker exec -it inception-nginx-1 nginx -t
+
+# Check NGINX logs
+docker compose -f srcs/docker-compose.yml logs nginx
+```
+
+### Volume Issues
+
+```bash
+# List all volumes
+docker volume ls
+
+# Inspect specific volume
+docker volume inspect inception_wordpress_data
+
+# Clean up unused volumes
+docker volume prune
+```
+
+## Customization
+
+### Modify NGINX Configuration
+
+- Edit: `srcs/requirements/nginx/conf/default.conf`
+- Rebuild with: `make re`
+
+### Install WordPress Plugins/Themes
+
+```bash
+# Install plugin via WordPress CLI
+docker exec -it inception-wordpress-1 wp plugin install <plugin-name> --allow-root
+
+# Install theme
+docker exec -it inception-wordpress-1 wp theme install <theme-name> --allow-root
+```
+
+### Modify MariaDB Configuration
+
+- Edit: `srcs/requirements/mariadb/conf/50-server.cnf`
+- Rebuild with: `make re`

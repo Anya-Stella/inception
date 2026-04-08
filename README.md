@@ -1,57 +1,90 @@
 *This project has been created as part of the 42 curriculum by tishihar.*
 
-# Inception
+# Inception — Docker Infrastructure Project
 
-## Description
+## Overview
 
-Inception is a system administration project that introduces Docker containerization. The goal is to set up a small infrastructure composed of different services running in dedicated Docker containers, orchestrated by Docker Compose inside a virtual machine.
+Inception is a system administration project using Docker and Docker Compose to containerize multiple web services and manage them on a virtual machine.
 
-The infrastructure includes:
-- **NGINX** — Web server with TLSv1.2/TLSv1.3, the sole entry point via port 443
-- **WordPress** — CMS running with PHP-FPM (without NGINX)
+**Project Services:**
+- **NGINX** — HTTPS-enabled reverse proxy (TLSv1.2/1.3) on port 443
+- **WordPress** — CMS running with PHP-FPM
 - **MariaDB** — Relational database for WordPress
 
-### Docker vs Virtual Machines
-Docker containers share the host OS kernel and provide process-level isolation, making them lightweight and fast to start. Virtual Machines emulate full hardware and run a complete guest OS, offering stronger isolation but with greater resource overhead.
-
-### Secrets vs Environment Variables
-Environment variables (`.env`) store non-sensitive configuration (domain name, usernames). Docker Secrets store sensitive data (passwords, keys) in files mounted at `/run/secrets/` inside containers, never exposed as environment variables or in image layers.
-
-### Docker Network vs Host Network
-Docker bridge networks provide isolated communication between containers with DNS resolution by container name. Host networking removes network isolation and binds containers directly to the host's network stack, which is less secure and not used in this project.
-
-### Docker Volumes vs Bind Mounts
-Named Docker volumes are managed by Docker and provide portability and lifecycle management. Bind mounts map a specific host directory to a container path. This project uses named volumes with local driver options to persist data at `/home/tishihar/data/`.
-
-## Instructions
+## Quick Start
 
 ### Prerequisites
 - Docker and Docker Compose V2 installed
-- Running inside a Virtual Machine (as per subject requirements)
+- Running on a virtual machine
 - `/etc/hosts` configured: `127.0.0.1 tishihar.42.fr`
 
-### Build and Run
+### Basic Commands
 ```bash
-make        # Build images and start all containers
+make        # Build images and start containers
 make down   # Stop and remove containers
-make re     # Rebuild and restart
+make re     # Clean rebuild and restart
 make fclean # Full cleanup (images, volumes, data)
 ```
 
 ### Access
-- Website: https://tishihar.42.fr
-- WordPress Admin: https://tishihar.42.fr/wp-admin
+- **Website:** https://tishihar.42.fr
+- **WordPress Admin:** https://tishihar.42.fr/wp-admin
 
-## Resources
+## Project Structure
+
+```
+.
+├── Makefile                          # Build and task definitions
+├── secrets/                          # Passwords and secrets (Git-excluded)
+│   ├── db_root_password.txt
+│   ├── db_password.txt
+│   ├── wp_admin_password.txt
+│   └── wp_user_password.txt
+└── srcs/
+    ├── docker-compose.yml            # Docker Compose configuration
+    ├── .env                          # Environment variables (Git-excluded)
+    └── requirements/
+        ├── nginx/                    # NGINX container
+        │   ├── Dockerfile
+        │   ├── conf/default.conf
+        │   └── tools/setup_nginx.sh
+        ├── wordpress/                # WordPress container
+        │   ├── Dockerfile
+        │   ├── conf/www.conf
+        │   └── tools/setup_wordpress.sh
+        └── mariadb/                  # MariaDB container
+            ├── Dockerfile
+            ├── conf/50-server.cnf
+            └── tools/setup_mariadb.sh
+```
+
+## Key Concepts
+
+### Docker Containers vs Virtual Machines
+- **Docker Containers** — Share host OS kernel, process-level isolation, fast and lightweight
+- **Virtual Machines** — Full OS emulation, stronger isolation, higher resource overhead
+
+### Environment Variables vs Secrets
+- **Environment Variables (`.env`)** — Non-sensitive config (domain, usernames)
+- **Secrets Files** — Sensitive data (passwords, keys) mounted at `/run/secrets/`
+
+### Docker Networking
+- **Bridge Network** — Isolated container communication with DNS resolution
+- **Host Network** — No isolation; not used in this project for security reasons
+
+### Volume Persistence
+- WordPress and MariaDB data persisted at `/home/tishihar/data/`
+- Managed by Docker named volumes
+
+## Documentation
+
+- [**User Documentation**](USER_DOC.md) — For site users (startup, access)
+- [**Developer Documentation**](DEV_DOC.md) — For developers (setup, customization, troubleshooting)
+
+## References
 
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [NGINX Documentation](https://nginx.org/en/docs/)
 - [WordPress CLI Handbook](https://make.wordpress.org/cli/handbook/)
 - [MariaDB Knowledge Base](https://mariadb.com/kb/en/)
-
-### AI Usage
-AI was used to assist with:
-- Reviewing Dockerfile best practices and troubleshooting configuration issues
-- Generating boilerplate for setup scripts
-- All AI-generated content was reviewed, tested, and adapted manually

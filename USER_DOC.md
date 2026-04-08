@@ -1,71 +1,149 @@
 # User Documentation — Inception
 
+This guide is for end users of the Inception WordPress site.
+For developer documentation, see [DEV_DOC.md](DEV_DOC.md).
+
 ## Overview
 
-This project provides a WordPress website running behind an NGINX reverse proxy with TLS encryption, backed by a MariaDB database. All services run in Docker containers.
+Inception is a Docker-based WordPress hosting environment consisting of three services:
 
-## Services
-
-| Service | Description | Container |
-|---------|-------------|-----------|
-| NGINX | Reverse proxy with HTTPS (TLSv1.2/1.3) | `nginx` |
-| WordPress | CMS with PHP-FPM | `wordpress` |
-| MariaDB | Database server | `mariadb` |
+| Service | Role | Technology |
+|---------|------|------------|
+| **NGINX** | Web server (HTTPS) | TLSv1.2/1.3 |
+| **WordPress** | Content Management System | PHP-FPM |
+| **MariaDB** | Database server | Relational DB |
 
 ## Starting and Stopping
 
+### Start the Site
+
 ```bash
-# Start the project (builds if needed)
 make
+```
 
-# Stop the project
+On first run, images will be built (may take a few minutes).
+
+### Stop the Site
+
+```bash
 make down
+```
 
-# Restart with a fresh build
-make re
+### Full Reset (Delete All Data)
 
-# Full cleanup (removes all data)
+```bash
 make fclean
 ```
 
+Then restart with `make`.
+
 ## Accessing the Website
 
-1. Ensure your `/etc/hosts` file contains:
-   ```
-   127.0.0.1 tishihar.42.fr
-   ```
-2. Open your browser and navigate to: **https://tishihar.42.fr**
-3. Accept the self-signed certificate warning (expected behavior).
+### Prerequisites
 
-## WordPress Administration
+Ensure `/etc/hosts` on your host machine contains:
 
-- **Admin Panel**: https://tishihar.42.fr/wp-admin
-- **Admin Username**: Defined in `srcs/.env` as `WP_ADMIN_USER`
-- **Admin Password**: Stored in `secrets/wp_admin_password.txt`
+```
+127.0.0.1 tishihar.42.fr
+```
 
-## Credentials
+### Access the Website
 
-Credentials are stored in two locations:
-- **`srcs/.env`** — Contains non-sensitive config (usernames, domain, email addresses)
-- **`secrets/`** — Contains password files (not committed to Git):
-  - `db_root_password.txt` — MariaDB root password
-  - `db_password.txt` — MariaDB WordPress user password
-  - `wp_admin_password.txt` — WordPress admin password
-  - `wp_user_password.txt` — WordPress regular user password
+Open your browser and navigate to:
 
-> ⚠️ Never commit the `secrets/` directory or `.env` file to a public repository.
+```
+https://tishihar.42.fr
+```
 
-## Checking Service Status
+**Note:** A self-signed certificate is used. Accept the security warning to proceed.
+
+### Access WordPress Admin Panel
+
+1. Navigate to https://tishihar.42.fr/wp-admin
+2. Log in with:
+   - **Username:** Value of `WP_ADMIN_USER` in `srcs/.env`
+   - **Password:** Contents of `secrets/wp_admin_password.txt`
+
+## Credential Management
+
+### File Structure
+
+```
+secrets/
+├── db_root_password.txt          # MariaDB root password
+├── db_password.txt               # MariaDB WordPress user password
+├── wp_admin_password.txt         # WordPress admin password
+└── wp_user_password.txt          # WordPress regular user password
+
+srcs/.env                          # Environment variables (usernames, etc.)
+```
+
+### Login Reference
+
+| Use Case | Username | Password | Location |
+|----------|----------|----------|----------|
+| **WordPress Admin** | `WP_ADMIN_USER` | `secrets/wp_admin_password.txt` | wp-admin |
+| **Regular User** | `wp_user` | `secrets/wp_user_password.txt` | WordPress |
+| **DB Access (Dev)** | `wp_user` | `secrets/db_password.txt` | - |
+
+## Status Check
+
+### Container Status
 
 ```bash
-# View container status
 make ps
+```
 
-# View container logs
+If all services show "Up", the infrastructure is running:
+
+```
+NAME          STATUS      PORTS
+nginx         Up 2 days   0.0.0.0:443->443/tcp
+wordpress     Up 2 days
+mariadb       Up 2 days
+```
+
+### View Logs
+
+```bash
+# Show all service logs
 make logs
 
-# Check individual container
-docker exec -it nginx nginx -t
-docker exec -it mariadb mysqladmin ping -u root -p
-docker exec -it wordpress wp --allow-root core version
+# Real-time logs (Ctrl+C to exit)
+make logs -f
 ```
+
+## Frequently Asked Questions
+
+### Q: I see "Connection Reset"
+
+A: Check the following:
+- Is `/etc/hosts` configured with `127.0.0.1 tishihar.42.fr`?
+- Are you using HTTPS (not HTTP)?
+- Is `make ps` showing all containers as "Up"?
+
+### Q: Can't Log Into WordPress
+
+A: Verify:
+- Username and password match the configured values
+- Caps Lock is not active
+- No extra newlines in `secrets/wp_admin_password.txt`
+
+### Q: Site Won't Start
+
+```bash
+# Check logs
+make logs
+
+# Full reset and restart
+make fclean
+make
+```
+
+### Q: SSL Certificate Warning
+
+A: This project uses a self-signed certificate. Warnings are normal. For production, use a certificate from a trusted Certificate Authority (CA).
+
+## Support
+
+For issues or questions, contact your administrator.

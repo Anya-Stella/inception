@@ -11,7 +11,7 @@ all: up
 up:
 	mkdir -p $(WORDPRESS_DATA)
 	mkdir -p $(MARIADB_DATA)
-	$(COMPOSE) up --build
+	$(COMPOSE) up --build -d
 
 build:
 	mkdir -p $(WORDPRESS_DATA)
@@ -27,18 +27,13 @@ stop:
 down:
 	$(COMPOSE) down
 
-re:
-	$(COMPOSE) down
-	rm -rf $(WORDPRESS_DATA)
-	rm -rf $(MARIADB_DATA)
-	mkdir -p $(WORDPRESS_DATA)
-	mkdir -p $(MARIADB_DATA)
-	$(COMPOSE) up --build
+re: down
+	$(COMPOSE) up --build -d
 
 clean:
-	$(COMPOSE) down -v
+	$(COMPOSE) down
 
-fclean: clean
+fclean:
 	$(COMPOSE) down --rmi all --volumes --remove-orphans
 	rm -rf $(WORDPRESS_DATA)
 	rm -rf $(MARIADB_DATA)
